@@ -1,3 +1,4 @@
+
 #include "citiesReader.h"
 #include "arbreCouvrantMin.h"
 #include <stdlib.h>
@@ -6,23 +7,19 @@
 #include <time.h>
 
 
-/*
-void saveGraph(ListOfCities * cities){
+
+void saveGraph(node_t **MST, int nbSommet){
   FILE* fileOut = NULL;
   fileOut = fopen("resuGraph.dat", "w");
-  for(int i=0; i<cities->number; i++){
-    for(int j=0; j<i; j++){
-      fprintf(fileOut, "%i %i\n", i, j);
+  for(int i=0; i<nbSommet; i++)
+  {
+    node_t *tmp = MST[i];
+    while(tmp != NULL)
+    {
+      fprintf(fileOut, "%d %d\n", i, tmp->valeur);
+      tmp=tmp->next;
     }
-  }
-  fclose(fileOut);
-}
-*/
-void saveGraph(tasbinaire_t *MST){
-  FILE* fileOut = NULL;
-  fileOut = fopen("resuGraph.dat", "w");
-  for(int i=0; i<MST->capacity; i++){
-    fprintf(fileOut, "%d %d\n", MST->adj[i].u, MST->adj[i].v);
+
 
   }
   fclose(fileOut);
@@ -65,23 +62,25 @@ int main(int argc, char ** argv) {
     printf("Erreur, il n'existe pas de ville avec une telle population en France\n");
     return -1;
   }
-  tasbinaire_t *heap = tasbinaire_create(nombre_arete);
+  node_t *liste_adj[cities->number+1];
+  node_t *ACM[cities->number+1];
+
+  initialiser_tab_of_node(liste_adj, cities->number);
+  initialiser_tab_of_node(ACM, cities->number);
 
   //dans un arbre couvrant minimal, il y a nbSommet - 1 aretes
   nombre_arete_MST = cities->number - 1;
 
-  tasbinaire_t *MST = tasbinaire_create(nombre_arete_MST);
 
-
-
-
-  definir_binaryHeap_longueur_arete(heap, popMin);
+  definir_binaryHeap_listAdjacence(liste_adj, cities);
   printf("\n\n");
 
-  //printf("Voici votre matrice d'adjacence :\n");
-  //affiche matrice d'adjacence pour une population donnée
-  //afficher_binaryHeap_longueur_arete(heap, popMin, nombre_arete);
+  //si on veut afficher la liste d'adjacence, decommenter la ligne suivante
+  //printf("Voici votre liste d'adjacence :\n");
+  //afficher_listeAdjacence(liste_adj, popMin, cities->number);
+
   printf("\n\n");
+
 
 
   printf("Veuillez choisir votre sommet source, celui-ci doit être compris entre 0 et %d\n\n", (cities->number-1));
@@ -91,7 +90,6 @@ int main(int argc, char ** argv) {
   {
     printf("Erreur, votre sommet doit être compris entre 0 et %d, veuillez réessayez\n\n", (cities->number-1));
     scanf("%d", &sommet_source);
-
   }
 
 
@@ -100,16 +98,16 @@ int main(int argc, char ** argv) {
 
   // Ajout d'un élément et mesure du temps pris par l'opération.
   clock_gettime(clk_id, &before);
-  prim(heap, cities->number, sommet_source, MST);
+  prim(liste_adj, cities->number, nombre_arete, sommet_source, ACM);
   clock_gettime(clk_id, &after);
 
 
 
 
-  printf("\n Voici votre arbre couvrant minimal : \n\n");
-  afficher_binaryHeap_longueur_arete(MST, popMin, nombre_arete_MST);
+  //printf("\n Voici votre arbre couvrant minimal : \n\n");
+  //afficher_listeAdjacence(ACM, popMin, cities->number);
   printf("\n\n");
-  printf("\n le cout total de notre arbre couvrant minimal est de %d km \n\n", cout_total(MST));
+  printf("\n le cout total de notre arbre couvrant minimal est de %d km \n\n", cout_total(ACM, cities->number));
 
   //on convertit les nanoseconde en milliseconde donc *10^-6
   printf("Le temps d'exécution de votre fonction PRIM est de %f millisecondes \n\n", (long)(after.tv_nsec - before.tv_nsec)*0.000001);
@@ -122,10 +120,10 @@ int main(int argc, char ** argv) {
    pas une liste de villes.
   */
   //saveGraph(cities);
-  saveGraph(MST);
+  saveGraph(ACM, cities->number);
 
-  tasbinaire_destroy(heap);
-  tasbinaire_destroy(MST);
+  node_destroy(liste_adj);
+  node_destroy(ACM);
   freeListOfCities(cities);
 
   return 0;
