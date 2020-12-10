@@ -12,7 +12,7 @@ struct ListOfCities
   float* lat;
 };
 
-ListOfCities* citiesReader(int popMin);
+ListOfCities* citiesReader(int popMin,char agr[10]);
 void freeListOfCities(ListOfCities * cities);
 
 #endif

@@ -15,7 +15,7 @@
 ListOfCities* createCities(int number){
     ListOfCities* cities = malloc(sizeof(ListOfCities));
     int i;
-    
+
     cities->number = number;
     // Allocate arrays
     cities->name = malloc(cities->number*sizeof(char*));
@@ -49,7 +49,7 @@ void freeListOfCities(ListOfCities * cities){
    population and coordinates.
    @param popMin is a threshold above which a city will be counted
    @return number of cities with a population above popMin
-   @requires inputFile != NULL 
+   @requires inputFile != NULL
    @requires popMin > 0
 */
 int countCitiesWithMinPopulation(FILE* inputFile, int popMin){
@@ -57,7 +57,7 @@ int countCitiesWithMinPopulation(FILE* inputFile, int popMin){
   char line[512];
   const char s[2] = ",";
   char *token;
-  
+
   while(fgets(line, 512, inputFile) != NULL){
     /* Select the 14th coma separated value and stores it in 'token' */
     token = strtok(line, s);
@@ -67,8 +67,8 @@ int countCitiesWithMinPopulation(FILE* inputFile, int popMin){
     if(myPop >= popMin) number++;
   }
   /* Rewind file */
-  fseek(inputFile, 0, SEEK_SET); 
-  
+  fseek(inputFile, 0, SEEK_SET);
+
   return number;
 }
 
@@ -88,9 +88,9 @@ void loadListOfCities(FILE* inputFile, int popMin, ListOfCities* cities){
   const char s[2] = ",";
   char *token;
   char myName[32];
-  
+
   while(fgets(line, 512, inputFile) != NULL){
-      
+
     token = strtok(line, s);
     for(i=0; i<3;  i++) token = strtok(NULL, s);
     strncpy(myName, token, 32);
@@ -102,7 +102,7 @@ void loadListOfCities(FILE* inputFile, int popMin, ListOfCities* cities){
       cities->lon[index] = atof(token);
       for(i=0; i<1;  i++) token = strtok(NULL, s);
       cities->lat[index] = atof(token);
-    
+
       strncpy(cities->name[index], myName, 32);
       cities->pop[index] = myPop;
       index++;
@@ -116,13 +116,16 @@ void loadListOfCities(FILE* inputFile, int popMin, ListOfCities* cities){
    @param cities is the ListOfCities data structure to save of disk.
    @requires cities != NULL
 */
-void saveListOfCities(ListOfCities* cities){
+void saveListOfCities(ListOfCities* cities, char agr[10]){
   FILE* outputFile = NULL;
-  if( (outputFile = fopen("resuCities.dat", "w")) == NULL){
+  char nomdefichier[100]="resuCities";
+  strcat(nomdefichier, agr);
+  strcat(nomdefichier, ".dat");
+  if( (outputFile = fopen(nomdefichier, "w")) == NULL){
     perror("Could not open file resuCities.dat");
     exit(-1);
   }
-  
+
   for(int i=0; i<cities->number; i++)
     fprintf(outputFile, "%i %f %f\n", cities->pop[i], cities->lon[i], cities->lat[i]);
   fclose(outputFile);
@@ -130,7 +133,7 @@ void saveListOfCities(ListOfCities* cities){
 
 
 /**
-   Loads the name, population and coordinates of all the cities above 
+   Loads the name, population and coordinates of all the cities above
    a given population threshold, store the result in a file named 'resuCities.dat'
    and return a ListOfCities data structure containing the list.
    @param popMin is the population threshold for a city to be considered.
@@ -138,7 +141,7 @@ void saveListOfCities(ListOfCities* cities){
    @requires popMin > 0
    @requires 'citiesList.csv' file to exist on disk and to be readable by the program.
 */
-ListOfCities* citiesReader(int popMin){
+ListOfCities* citiesReader(int popMin, char agr[10]){
   /* READING cities with population greater than or equal to 'popMin' */
   printf("== Reading cities with population >= %i from 'citiesList.csv' ==\n", popMin);
 
@@ -150,12 +153,12 @@ ListOfCities* citiesReader(int popMin){
 
   ListOfCities* cities = createCities(countCitiesWithMinPopulation(inputFile, popMin));
   loadListOfCities(inputFile, popMin, cities);
- 
+
   fclose(inputFile);
-  
+
   /* WRITING cities with population greater than or equal to 'popMin' */
   printf("== Writing cities with population >= %i in 'resuCities.dat' ==\n", popMin);
-  saveListOfCities(cities);
+  saveListOfCities(cities,agr);
 
   return cities;
 }

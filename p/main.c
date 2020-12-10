@@ -1,4 +1,3 @@
-
 #include "citiesReader.h"
 #include "arbreCouvrantMin.h"
 #include <stdlib.h>
@@ -7,19 +6,26 @@
 #include <time.h>
 
 
-
-void saveGraph(node_t **MST, int nbSommet){
+/*
+void saveGraph(ListOfCities * cities){
   FILE* fileOut = NULL;
   fileOut = fopen("resuGraph.dat", "w");
-  for(int i=0; i<nbSommet; i++)
-  {
-    node_t *tmp = MST[i];
-    while(tmp != NULL)
-    {
-      fprintf(fileOut, "%d %d\n", i, tmp->valeur);
-      tmp=tmp->next;
+  for(int i=0; i<cities->number; i++){
+    for(int j=0; j<i; j++){
+      fprintf(fileOut, "%i %i\n", i, j);
     }
-
+  }
+  fclose(fileOut);
+}
+*/
+void saveGraph(int nbSommet, arete heap[nbSommet], char agr[10]){
+  FILE* fileOut = NULL;
+  char nomdefichier[100]="resuGraph";
+  strcat(nomdefichier, agr);
+  strcat(nomdefichier, ".dat");
+  fileOut = fopen(nomdefichier, "w");
+  for(int i=0; i<nbSommet; i++){
+    fprintf(fileOut, "%d %d\n", heap[i].u, heap[i].v);
 
   }
   fclose(fileOut);
@@ -38,46 +44,38 @@ int main(int argc, char ** argv) {
   int popMin = atoi(argv[1]);
 
   ListOfCities* cities;
-  cities = citiesReader(popMin);
+  cities = citiesReader(popMin,argv[1]);
 
   // ... just to check! This line can be removed.
-  for(int i=0; i<cities->number; i++){
+/*  for(int i=0; i<cities->number; i++){
     printf("%s %i %f %f\n", cities->name[i], cities->pop[i], cities->lon[i], cities->lat[i]);
-  }
+  }*/
 
 //-----------------------------------------------------------------
 //--- COMPUTING complete graph
 //-----------------------------------------------------------------
 
 
-  struct timespec before, after;
-  clockid_t clk_id = CLOCK_REALTIME;
+  /*struct timespec before, after;
+  clockid_t clk_id = CLOCK_REALTIME;*/
 
   int nombre_arete = (cities->number * (cities->number-1))/2;
   int nombre_arete_MST;
-  int sommet_source;
+  int sommet_source, cout_total;
 
   if(cities->number <=0 )
   {
     printf("Erreur, il n'existe pas de ville avec une telle population en France\n");
     return -1;
   }
-  node_t *liste_adj[cities->number+1];
-  node_t *ACM[cities->number+1];
+  //int adj[cities->number][cities->number];
+  int **adj = (int **)malloc(cities->number * sizeof(int*));
+  for(int i = 0; i < cities->number; i++)
+    adj[i] = (int *)malloc(cities->number * sizeof(int));
 
-  initialiser_tab_of_node(liste_adj, cities->number);
-  initialiser_tab_of_node(ACM, cities->number);
+  arete heap[cities->number];
 
-  //dans un arbre couvrant minimal, il y a nbSommet - 1 aretes
-  nombre_arete_MST = cities->number - 1;
-
-
-  definir_binaryHeap_listAdjacence(liste_adj, cities);
-  printf("\n\n");
-
-  //si on veut afficher la liste d'adjacence, decommenter la ligne suivante
-  //printf("Voici votre liste d'adjacence :\n");
-  //afficher_listeAdjacence(liste_adj, popMin, cities->number);
+  init_adjacence(cities, adj);
 
   printf("\n\n");
 
@@ -90,27 +88,35 @@ int main(int argc, char ** argv) {
   {
     printf("Erreur, votre sommet doit être compris entre 0 et %d, veuillez réessayez\n\n", (cities->number-1));
     scanf("%d", &sommet_source);
+
   }
 
 
+  //afficher_adj(cities->number, adj);
 
   printf("Vous avez choisi [%d] comme sommet source\n\n", sommet_source);
+  clock_t begin = clock();
 
   // Ajout d'un élément et mesure du temps pris par l'opération.
-  clock_gettime(clk_id, &before);
-  prim(liste_adj, cities->number, nombre_arete, sommet_source, ACM);
-  clock_gettime(clk_id, &after);
+  //clock_gettime(clk_id, &before);
+  cout_total = prim(cities->number, heap, sommet_source, adj);
+  //clock_gettime(clk_id, &after);
+
+  clock_t end = clock();
+  double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+  //printf("\n Voici votre arbre couvrant minimal : \n\n");
+  //afficher_heap(cities->number-1, heap);
 
 
 
 
   //printf("\n Voici votre arbre couvrant minimal : \n\n");
-  //afficher_listeAdjacence(ACM, popMin, cities->number);
+  //afficher_binaryHeap_longueur_arete(MST, popMin, nombre_arete_MST);
   printf("\n\n");
-  printf("\n le cout total de notre arbre couvrant minimal est de %d km \n\n", cout_total(ACM, cities->number));
+  printf("\n le cout total de notre arbre couvrant minimal est de %d km \n\n", cout_total);
 
   //on convertit les nanoseconde en milliseconde donc *10^-6
-  printf("Le temps d'exécution de votre fonction PRIM est de %f millisecondes \n\n", (long)(after.tv_nsec - before.tv_nsec)*0.000001);
+  printf("Le temps d'exécution de votre fonction PRIM est de %f secondes \n\n", time_spent);
 
 
   /*
@@ -120,10 +126,9 @@ int main(int argc, char ** argv) {
    pas une liste de villes.
   */
   //saveGraph(cities);
-  saveGraph(ACM, cities->number);
+  saveGraph(cities->number-1, heap,argv[1]);
 
-  node_destroy(liste_adj);
-  node_destroy(ACM);
+  destroy_adj(adj, cities->number);
   freeListOfCities(cities);
 
   return 0;
